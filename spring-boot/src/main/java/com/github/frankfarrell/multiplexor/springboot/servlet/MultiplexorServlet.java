@@ -3,17 +3,20 @@ package com.github.frankfarrell.multiplexor.springboot.servlet;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.frankfarrell.multiplexor.springboot.model.MultiplexorRequest;
+import com.github.frankfarrell.multiplexor.springboot.model.MultiplexorResponse;
+import com.github.frankfarrell.multiplexor.springboot.request.DeMultiplexedHttpServletRequest;
+import com.github.frankfarrell.multiplexor.springboot.request.DeMultiplexedHttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.Principal;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Created by ffarrell on 23/02/2018.
@@ -37,8 +40,20 @@ public class MultiplexorServlet extends HttpServlet {
 
         final List<MultiplexorRequest> requests = objectMapper.readValue(servletRequest.getInputStream(), new TypeReference<List<MultiplexorRequest>>(){});
 
+        final List<MultiplexorResponse> responses = requests.stream()
+                .map(request -> {
+                    final DeMultiplexedHttpServletResponse httpResponse = new DeMultiplexedHttpServletResponse(new CountDownLatch(1));
 
+                    try {
+                        dispatcherServlet.service(new DeMultiplexedHttpServletRequest(request), httpResponse);
+                    } catch (ServletException|IOException e) {
+                        //TODO ?
+                    }
+                    return new MultiplexorResponse(request.method, request.path, httpResponse, objectMapper);
+                })
+                .collect(toList());
 
-        dispatcherServlet.service(servletRequest, servletResponse);
+        servletResponse.getWriter().append(objectMapper.writeValueAsString(responses));
+        servletResponse.setStatus(207);
     }
 }
