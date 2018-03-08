@@ -55,5 +55,6 @@ public class MultiplexorServlet extends HttpServlet {
 
         servletResponse.getWriter().append(objectMapper.writeValueAsString(responses));
         servletResponse.setStatus(207);
+        servletResponse.setContentType("application/json");
     }
 }
