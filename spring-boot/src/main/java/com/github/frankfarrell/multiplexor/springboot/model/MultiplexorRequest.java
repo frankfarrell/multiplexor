@@ -16,14 +16,14 @@ public class MultiplexorRequest {
     public final String path;
     public final Optional<Map<String, String>> queryParams;
     public final Optional<Map<String, String>> headers;
-    public final Optional<Map<String, Object>> body;
+    public final Optional<String> body;
 
     @JsonCreator
     public MultiplexorRequest(@JsonProperty(value = "method", required = true) final HttpMethod method,
                               @JsonProperty(value = "path", required = true) final String path,
                               @JsonProperty(value = "queryParams", required = false) final Map<String, String> queryParams,
                               @JsonProperty(value = "headers", required = false) final Map<String, String> headers,
-                              @JsonProperty(value = "body", required = false) final Map<String, Object> body) {
+                              @JsonProperty(value = "body", required = false) final String body) {
         this.method = method;
         this.path = path;
         this.queryParams = Optional.ofNullable(queryParams);
