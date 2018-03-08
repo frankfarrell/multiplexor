@@ -1,17 +1,35 @@
 package com.github.frankfarrell.multiplexor.springboot.request;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 
 /**
- * Created by ffarrell on 23/02/2018.
+ * Created by frankfarrell on 23/02/2018.
  */
 public class DeMultiplexedHttpServletResponse implements HttpServletResponse {
+
+    private int statusCode;
+    private String statusMessage;
+    private final CountDownLatch writersCountDownLatch;
+    private boolean isCommitted = false;
+    private String responseBody;
+    private PrintWriter writer;
+    private ByteArrayOutputStream bodyOutputStream = new ByteArrayOutputStream();
+
+    public DeMultiplexedHttpServletResponse(CountDownLatch latch) {
+        this.writersCountDownLatch = latch;
+    }
 
     @Override
     public void addCookie(Cookie cookie) {
@@ -89,18 +107,20 @@ public class DeMultiplexedHttpServletResponse implements HttpServletResponse {
     }
 
     @Override
-    public void setStatus(int sc) {
-
+    public void setStatus(final int status) {
+        statusCode = status;
     }
 
     @Override
-    public void setStatus(int sc, String sm) {
-
+    @Deprecated
+    public void setStatus(final int status, final String message) {
+        statusCode = status;
+        statusMessage = message;
     }
 
     @Override
     public int getStatus() {
-        return 0;
+        return statusCode;
     }
 
     @Override
@@ -115,7 +135,7 @@ public class DeMultiplexedHttpServletResponse implements HttpServletResponse {
 
     @Override
     public Collection<String> getHeaderNames() {
-        return null;
+        return Collections.emptySet();
     }
 
     @Override
@@ -130,13 +150,57 @@ public class DeMultiplexedHttpServletResponse implements HttpServletResponse {
 
     @Override
     public ServletOutputStream getOutputStream() throws IOException {
-        return null;
+        return new ServletOutputStream() {
+            private WriteListener listener;
+
+            @Override
+            public boolean isReady() {
+                return true;
+            }
+
+
+            @Override
+            public void setWriteListener(WriteListener writeListener) {
+                if (writeListener != null) {
+                    try {
+                        writeListener.onWritePossible();
+                    } catch (IOException e) {
+                    }
+
+                    listener = writeListener;
+                }
+            }
+
+
+            @Override
+            public void write(int b) throws IOException {
+                try {
+                    bodyOutputStream.write(b);
+                } catch (Exception e) {
+                    if (listener != null) {
+                        listener.onError(e);
+                    }
+                }
+            }
+
+
+            @Override
+            public void close()
+                    throws IOException {
+                super.close();
+                flushBuffer();
+            }
+        };
     }
 
     @Override
     public PrintWriter getWriter() throws IOException {
-        return null;
+        if (null == writer) {
+            writer = new PrintWriter(new OutputStreamWriter(bodyOutputStream, StandardCharsets.UTF_8));
+        }
+        return writer;
     }
+
 
     @Override
     public void setCharacterEncoding(String charset) {
@@ -159,34 +223,46 @@ public class DeMultiplexedHttpServletResponse implements HttpServletResponse {
     }
 
     @Override
-    public void setBufferSize(int size) {
-
+    public void setBufferSize(int i) {
+        bodyOutputStream = new ByteArrayOutputStream(i);
     }
+
 
     @Override
     public int getBufferSize() {
-        return 0;
+        return bodyOutputStream.size();
     }
+
 
     @Override
     public void flushBuffer() throws IOException {
-
+        if (null != writer) {
+            writer.flush();
+        }
+        responseBody = new String(bodyOutputStream.toByteArray(), StandardCharsets.UTF_8);
+        isCommitted = true;
+        writersCountDownLatch.countDown();
     }
+
 
     @Override
     public void resetBuffer() {
-
+        bodyOutputStream = new ByteArrayOutputStream();
     }
+
 
     @Override
     public boolean isCommitted() {
-        return false;
+        return isCommitted;
     }
+
 
     @Override
     public void reset() {
-
+        responseBody = null;
+        bodyOutputStream = new ByteArrayOutputStream();
     }
+
 
     @Override
     public void setLocale(Locale loc) {
@@ -196,5 +272,9 @@ public class DeMultiplexedHttpServletResponse implements HttpServletResponse {
     @Override
     public Locale getLocale() {
         return null;
+    }
+
+    public String getAwsResponseBodyString() {
+        return responseBody;
     }
 }

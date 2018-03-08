@@ -1,20 +1,25 @@
 package com.github.frankfarrell.multiplexor.springboot.request;
 
+import com.github.frankfarrell.multiplexor.springboot.model.MultiplexorRequest;
+
 import javax.servlet.*;
 import javax.servlet.http.*;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by ffarrell on 23/02/2018.
  */
 public class DeMultiplexedHttpServletRequest implements HttpServletRequest {
+
+    private final MultiplexorRequest multiplexorRequest;
+
+    public DeMultiplexedHttpServletRequest(final MultiplexorRequest multiplexorRequest) {
+        this.multiplexorRequest = multiplexorRequest;
+    }
+
 
     @Override
     public String getAuthType() {
@@ -33,7 +38,7 @@ public class DeMultiplexedHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getHeader(String name) {
-        return null;
+        return multiplexorRequest.headers.map(stringStringMap -> stringStringMap.get(name)).orElse(null);
     }
 
     @Override
@@ -43,7 +48,7 @@ public class DeMultiplexedHttpServletRequest implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getHeaderNames() {
-        return null;
+        return multiplexorRequest.headers.map(value -> Collections.enumeration(value.keySet())).orElse(Collections.emptyEnumeration());
     }
 
     @Override
@@ -53,12 +58,12 @@ public class DeMultiplexedHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getMethod() {
-        return null;
+        return multiplexorRequest.method.name();
     }
 
     @Override
     public String getPathInfo() {
-        return null;
+        return multiplexorRequest.path;
     }
 
     @Override
@@ -68,12 +73,12 @@ public class DeMultiplexedHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getContextPath() {
-        return null;
+        return "";
     }
 
     @Override
     public String getQueryString() {
-        return null;
+        return ""; //TODO
     }
 
     @Override
@@ -98,17 +103,38 @@ public class DeMultiplexedHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getRequestURI() {
-        return null;
+        return cleanUri(multiplexorRequest.path);
     }
+
 
     @Override
     public StringBuffer getRequestURL() {
-        return null;
+        String url = "";
+        url += getServerName();
+        url += cleanUri(multiplexorRequest.path);
+
+        return new StringBuffer(getScheme() + "://" + url);
+    }
+
+    private String cleanUri(String uri) {
+        String finalUri = uri;
+
+        if (!finalUri.startsWith("/")) {
+            finalUri = "/" + finalUri;
+        }
+
+        if (finalUri.endsWith(("/"))) {
+            finalUri = finalUri.substring(0, finalUri.length() - 1);
+        }
+
+        finalUri = finalUri.replaceAll("/+", "/");
+
+        return finalUri;
     }
 
     @Override
     public String getServletPath() {
-        return null;
+        return "";
     }
 
     @Override
@@ -208,12 +234,63 @@ public class DeMultiplexedHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getContentType() {
-        return null;
+        return getHeader("content-type") != null? getHeader("content-type") : "application/json";
     }
 
     @Override
     public ServletInputStream getInputStream() throws IOException {
-        return null;
+        if (!multiplexorRequest.body.isPresent()) {
+            return null;
+        }
+        else{
+            final byte[] bodyBytes = multiplexorRequest.body.get().getBytes(StandardCharsets.UTF_8);
+            return new MultiplexorInputStream(new ByteArrayInputStream(bodyBytes));
+        }
+    }
+
+    public static final class MultiplexorInputStream extends ServletInputStream {
+
+        private InputStream bodyStream;
+        private ReadListener listener;
+
+        public MultiplexorInputStream(InputStream body) {
+            bodyStream = body;
+        }
+
+
+        @Override
+        public boolean isFinished() {
+            return true;
+        }
+
+
+        @Override
+        public boolean isReady() {
+            return true;
+        }
+
+
+        @Override
+        public void setReadListener(ReadListener readListener) {
+            listener = readListener;
+            try {
+                listener.onDataAvailable();
+            } catch (IOException e) {
+                //log.error("Data not available on input stream", e);
+            }
+        }
+
+
+        @Override
+        public int read()
+                throws IOException {
+            int readByte = bodyStream.read();
+            if (bodyStream.available() == 0 && listener != null) {
+                listener.onAllDataRead();
+            }
+            return readByte;
+        }
+
     }
 
     @Override
