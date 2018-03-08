@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Random;
 
 /**
  * Created by ffarrell on 23/02/2018.
@@ -20,6 +20,7 @@ import java.util.List;
 public class DogController {
 
     private final ArrayList<String> dogs = new ArrayList<>(Arrays.asList("labrador", "pooch", "poodle"));
+    private final Random random = new Random();
 
     @RequestMapping(value = "", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<ArrayList<String>> getDogs(){
@@ -27,8 +28,11 @@ public class DogController {
     }
 
     @RequestMapping(value = "", method = RequestMethod.POST, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<ArrayList<String>> addDog(@RequestBody final String newDog){
+    public ResponseEntity<ArrayList<String>> addDog(@RequestBody final String newDog) throws InterruptedException {
         dogs.add(newDog);
+
+        Thread.sleep(random.nextInt(10000));
+
         return new ResponseEntity<>(dogs, HttpStatus.CREATED);
     }
 }

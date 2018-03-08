@@ -40,19 +40,29 @@ public class MultiplexorServlet extends HttpServlet {
 
         final List<MultiplexorRequest> requests = objectMapper.readValue(servletRequest.getInputStream(), new TypeReference<List<MultiplexorRequest>>(){});
 
+        long totalStartTime = System.currentTimeMillis();
+
         final List<MultiplexorResponse> responses = requests.stream()
+                .parallel()
                 .map(request -> {
                     final DeMultiplexedHttpServletResponse httpResponse = new DeMultiplexedHttpServletResponse(new CountDownLatch(1));
 
+                    long startTime = System.currentTimeMillis();
                     try {
                         dispatcherServlet.service(new DeMultiplexedHttpServletRequest(request), httpResponse);
                     } catch (ServletException|IOException e) {
                         //TODO ?
                     }
-                    return new MultiplexorResponse(request.method, request.path, httpResponse, objectMapper);
+
+                    long endTime = System.currentTimeMillis();
+
+                    return new MultiplexorResponse(request.method, request.path, httpResponse, objectMapper, endTime -startTime);
                 })
                 .collect(toList());
 
+        long totalEndTime = System.currentTimeMillis();
+
+        servletResponse.setHeader("totalDuration", Long.toString(totalEndTime-totalStartTime));
         servletResponse.getWriter().append(objectMapper.writeValueAsString(responses));
         servletResponse.setStatus(207);
         servletResponse.setContentType("application/json");
