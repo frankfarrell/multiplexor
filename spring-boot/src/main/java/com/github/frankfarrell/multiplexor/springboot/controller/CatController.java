@@ -19,7 +19,7 @@ import java.util.List;
 public class CatController {
 
     @RequestMapping(value = "", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<List<String>> postDownloadUsage(){
+    public ResponseEntity<List<String>> getCats(){
         return new ResponseEntity<>(Arrays.asList("lion", "jaguar", "tiger"),HttpStatus.OK);
     }
 
