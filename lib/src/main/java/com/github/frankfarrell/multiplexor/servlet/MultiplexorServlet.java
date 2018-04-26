@@ -1,13 +1,11 @@
-package com.github.frankfarrell.multiplexor.springboot.servlet;
+package com.github.frankfarrell.multiplexor.servlet;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.frankfarrell.multiplexor.springboot.model.MultiplexorRequest;
-import com.github.frankfarrell.multiplexor.springboot.model.MultiplexorResponse;
-import com.github.frankfarrell.multiplexor.springboot.request.DeMultiplexedHttpServletRequest;
-import com.github.frankfarrell.multiplexor.springboot.request.DeMultiplexedHttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import com.github.frankfarrell.multiplexor.model.MultiplexorRequest;
+import com.github.frankfarrell.multiplexor.model.MultiplexorResponse;
+import com.github.frankfarrell.multiplexor.request.DeMultiplexedHttpServletRequest;
+import com.github.frankfarrell.multiplexor.request.DeMultiplexedHttpServletResponse;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.servlet.*;
@@ -19,15 +17,13 @@ import java.util.concurrent.CountDownLatch;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Created by ffarrell on 23/02/2018.
+ * Created by frankfarrell on 23/02/2018.
  */
-@Component
 public class MultiplexorServlet extends HttpServlet {
 
     private final DispatcherServlet dispatcherServlet;
     private final ObjectMapper objectMapper;
 
-    @Autowired
     public MultiplexorServlet(final DispatcherServlet dispatcherServlet, final ObjectMapper objectMapper) {
         this.dispatcherServlet = dispatcherServlet;
         this.objectMapper = objectMapper;

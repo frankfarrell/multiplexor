@@ -1,6 +1,6 @@
-package com.github.frankfarrell.multiplexor.springboot.request;
+package com.github.frankfarrell.multiplexor.request;
 
-import com.github.frankfarrell.multiplexor.springboot.model.MultiplexorRequest;
+import com.github.frankfarrell.multiplexor.model.MultiplexorRequest;
 
 import javax.servlet.*;
 import javax.servlet.http.*;

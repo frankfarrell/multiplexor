@@ -2,6 +2,8 @@
 Multiplex REST requests to save bandwidth, avoid browser throttling and boost performance while keeping your api easy 
 to understand and self-documenting! 
 
+See the example application to se how it works, or read on...
+
 ## How it works
 The client (coming soon!) collects http requests to the server in a configurable time window (eg 1 second) 
 and POSTs them all in one payload to the /multiplex endpoint. The payload is of the form
@@ -30,22 +32,27 @@ The response is of the form, where the body is a String (potentially containing 
 		"requestPath": "/dog",
 		"statusCode": "200",
 		"body": "[\"labrador\",\"pooch\",\"poodle\",\"mongrel\"]",
-		"headers": {}
+		"headers": {}, 
+		"timeInMillis": 893
 	}, {
 		"requestMethod": "POST",
 		"requestPath": "/dog",
 		"statusCode": "201",
 		"body": "[\"labrador\",\"pooch\",\"poodle\",\"mongrel\",\"mongrel\"]",
-		"headers": {}
+		"headers": {}, 
+		"timeInMillis": 142
 	}, {
 		"requestMethod": "GET",
 		"requestPath": "/cat",
 		"statusCode": "200",
 		"body": "[\"lion\",\"jaguar\",\"tiger\"]",
-		"headers": {}
+		"headers": {}, 
+		"timeInMillis": 1
 	}
 ]
 ```
+
+There is also a header iwth total processing time `totalduration`
 
 Note that the order of the requests is currently undetermined. 
 
@@ -103,3 +110,6 @@ If typically the requests would consume N threads, the multiplexor request will 
 1. Request ordering: Eg if there is an update and a read for the same resource in one request, which one should happen first?
 2. Handle headers
 3. NB: Security, at the servlet level and per resource level too
+
+## See also
+1) Linkedin's restli has some method for multiplexing REST requests, but documentation doesn't seem to exist for add and you need use it within the context of Restli. Could be a good fit for a microservice architecture: [code on github](https://github.com/linkedin/rest.li/tree/master/restli-client/src/main/java/com/linkedin/restli/client/multiplexer)

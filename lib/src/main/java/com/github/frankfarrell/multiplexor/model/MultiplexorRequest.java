@@ -1,4 +1,4 @@
-package com.github.frankfarrell.multiplexor.springboot.model;
+package com.github.frankfarrell.multiplexor.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Created by ffarrell on 23/02/2018.
+ * Created by frankfarrell on 23/02/2018.
  */
 public class MultiplexorRequest {
 

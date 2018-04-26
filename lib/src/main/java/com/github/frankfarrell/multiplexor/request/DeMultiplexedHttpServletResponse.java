@@ -1,4 +1,4 @@
-package com.github.frankfarrell.multiplexor.springboot.request;
+package com.github.frankfarrell.multiplexor.request;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;

@@ -1,7 +1,7 @@
-package com.github.frankfarrell.multiplexor.springboot.model;
+package com.github.frankfarrell.multiplexor.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.frankfarrell.multiplexor.springboot.request.DeMultiplexedHttpServletResponse;
+import com.github.frankfarrell.multiplexor.request.DeMultiplexedHttpServletResponse;
 import org.springframework.http.HttpMethod;
 
 import java.util.Map;
@@ -11,7 +11,7 @@ import java.util.function.Function;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * Created by ffarrell on 23/02/2018.
+ * Created by frankfarrell on 23/02/2018.
  */
 public class MultiplexorResponse {
 
