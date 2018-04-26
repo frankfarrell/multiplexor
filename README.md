@@ -1,4 +1,4 @@
-# rest-multiplexor
+# Multiplexor
 Multiplex REST requests to save bandwidth
 
 ## How it works
@@ -47,6 +47,16 @@ The response is of the form, where the body is a String (potentially containing 
 ```
 
 Note that the order of the requests is currently undetermined. 
+
+## Why bother?
+
+1. Web browsers enforce a limit on the number of concurrent connections to a host (by rfc its 2, but for latest Chrome it is 6). If you need to make multiple long running calls to 
+your server, the total latency could increase because of such stalling: https://www.bluetriangle.com/blog/blocking-web-performance-villain/
+2. You could write a multiplexed endpoint yourself but the benefit here is that you get to keep a nice clean api.
+
+## Worth noting 
+Each de-multiplexed request is handled in a separate thread as servlet request. You get things like transactions and endpoint level security quite cheaply, but with the overhead of extra threads. 
+If typically the requests would consume N threads, the multipplexor request will consume N+1 threads
 
 ## TODO 
 1. Request ordering: Eg if there is an update and a read for the same resource in one request, which one should happen first?
