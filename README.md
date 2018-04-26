@@ -1,5 +1,6 @@
 # Multiplexor
-Multiplex REST requests to save bandwidth
+Multiplex REST requests to save bandwidth, avoid browser throttling and boost performance while keeping your api easy 
+to understand and self-documenting! 
 
 ## How it works
 The client (coming soon!) collects http requests to the server in a configurable time window (eg 1 second) 
@@ -48,6 +49,46 @@ The response is of the form, where the body is a String (potentially containing 
 
 Note that the order of the requests is currently undetermined. 
 
+## Configure: 
+
+Add the following to your Spring Boot applicatoin config 
+
+```
+import com.github.frankfarrell.multiplexor.servlet.MultiplexorServlet;
+import org.springframework.web.servlet.DispatcherServlet;
+
+...
+    private static final MULTIPLEXOR_ENDPOINT = "/multiplexor";
+        
+    @Bean
+    public DispatcherServlet dispatcherServlet() {
+        return new DispatcherServlet();
+    }
+
+    @Bean
+    public ServletRegistrationBean dispatcherServletRegistration(DispatcherServlet dispatcherServlet) {
+
+        ServletRegistrationBean registration = new ServletRegistrationBean(dispatcherServlet);
+        registration.setLoadOnStartup(0);
+        registration.setName(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_REGISTRATION_BEAN_NAME);
+
+        return registration;
+    } 
+    
+    @Bean
+    public MultiplexorServlet multiplexorServlet(DispatcherServlet dispatcherServlet, ObjectMapper objectMapper){
+        return new MultiplexorServlet(dispatcherServlet, objectMapper);
+    }
+
+    @Bean
+    public ServletRegistrationBean servletRegistrationBean(final MultiplexorServlet multiplexorServlet){
+        final ServletRegistrationBean registration = new ServletRegistrationBean(multiplexorServlet, MULTIPLEXOR_ENDPOINT);
+        return registration;
+    }
+```
+
+All requests to `/multiplexor` will be demultiplexed. 
+
 ## Why bother?
 
 1. Web browsers enforce a limit on the number of concurrent connections to a host (by rfc its 2, but for latest Chrome it is 6). If you need to make multiple long running calls to 
@@ -56,7 +97,7 @@ your server, the total latency could increase because of such stalling: https://
 
 ## Worth noting 
 Each de-multiplexed request is handled in a separate thread as servlet request. You get things like transactions and endpoint level security quite cheaply, but with the overhead of extra threads. 
-If typically the requests would consume N threads, the multipplexor request will consume N+1 threads
+If typically the requests would consume N threads, the multiplexor request will consume N+1 threads
 
 ## TODO 
 1. Request ordering: Eg if there is an update and a read for the same resource in one request, which one should happen first?
